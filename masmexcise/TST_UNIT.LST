@@ -1,0 +1,207 @@
+Microsoft (R) Macro Assembler Version 5.00                  1/3/19 10:46:41
+                                                             Page     1-1
+
+
+				;课程设计1：把实验7的数据显示出�
+				�，以10进制的形式显示出来。 
+				;使用了数值转换，字符的显示，除�
+				��溢出。 
+				;问题1：为何返回的程序不对 
+				 
+				assume cs:codesg,ss:stk 
+				 
+ 0000				datasg segment 
+ 0000  00000000				tmp2 dd 0	;把要进行转换的�
+				��据放到这里 
+ 0004  000A[				tmp3 db 10 dup (0)	;转换完成�
+				�的数据在这里。 
+	   00			
+			 ]	
+				
+ 000E  0001 0002			tmp4 dw 1,2 
+ = 0004					count equ $-tmp4 
+ 0012  48 45 4C 4C 4F 21 0D		mstr db 'HELLO!',0dh,0ah,'$' 
+       0A 24			
+ 001B  6F6B				mstr2 dw 'ok' 
+ 001D				datasg ends 
+				 
+ 0000				stk segment stack 
+ 0000  0064[				dw 100 dup (0) 
+	   0000			
+			 ]	
+				
+ 00C8				stk ends 
+				 
+ 0000				codesg segment 
+				;----------------------------------------------
+				----------- 
+				;主函数的入口 
+				;测试10进制转换的函数，我们发现�
+				�够正常运作 
+				;----------------------------------------------
+				----------- 
+ 0000				start:	 
+				 
+ 0000  B8 0004				mov ax,count	;这里得到的是以�
+				��节为单位的个数统计 
+				 
+ 0003  E8 001C R			call my_test 
+				 
+					;--------------------------------------
+				--- 
+					;这是检测design的函数 
+ 0006  B8 ---- R			mov ax,datasg 
+ 0009  8E D8				mov ds,ax 
+ 000B  B8 04D2				mov ax,1234 
+ 000E  8D 1E 0000 R			lea bx,tmp2 
+ 0012  89 07				mov [bx],ax 
+ 0014  E8 0031 R			call deci 
+Microsoft (R) Macro Assembler Version 5.00                  1/3/19 10:46:41
+                                                             Page     1-2
+
+
+ 0017  B8 4C00				mov ax,4c00H 
+ 001A  CD 21				int 21H 
+				;----------------------------------------------
+				----------- 
+				;测试各种语句 
+				;----------------------------------------------
+				----------- 
+ 001C				my_test: 
+ 001C  B8 ---- R			mov ax,datasg 
+ 001F  8E D8				mov ds,ax 
+				 
+ 0021  B8 0010				mov ax,10H 
+ 0024  25 0010				and ax,10000B 
+				 
+					;使用dos中断来显示字符串 
+					;dx存放字符串首地址，ax是中�
+				��程序号码。字符串需要一个$结束�
+				� 
+ 0027  8D 16 0012 R			lea dx,mstr 
+ 002B  B8 0900				mov ax,900H 
+ 002E  CD 21				int 21H 
+ 0030  C3				ret 
+				 
+				 
+				;----------------------------------------------
+				------- 
+				;计算10进制的数据。 
+				;----------------------------------------------
+				------- 
+ 0031				deci: 
+ 0031  BE 0000				mov si,0		;计算一共�
+				�个10进制数据 
+				 
+ 0034  8D 1E 0000 R			lea bx,tmp2 
+ 0038  B8 ---- R			mov ax,datasg 
+ 003B  8E D8				mov ds,ax 
+ 003D  8B 07				mov ax,[bx] 
+ 003F  8B 57 02				mov dx,[bx+2] 
+ 0042				deci_s1: 
+ 0042  B9 000A				mov cx,10 
+ 0045  E8 0066 R			call divdw 
+ 0048  46				inc si 
+ 0049  51				push cx 
+ 004A  83 FA 00				cmp dx,0		;对结果进�
+				�判断，如果两个是0才进行处理。 
+ 004D  75 05				jnz deci_s0 
+ 004F  3D 0000				cmp ax,0 
+ 0052  74 02				jz deci_ret 
+ 0054				deci_s0: 
+ 0054  EB EC				jmp deci_s1 
+ 0056				deci_ret: 
+ 0056  8B CE				mov cx,si 
+ 0058  8D 1E 0004 R			lea bx,tmp3 
+ 005C  BE 0000				mov si,0 
+Microsoft (R) Macro Assembler Version 5.00                  1/3/19 10:46:41
+                                                             Page     1-3
+
+
+ 005F				deci_s2: 
+ 005F  5A				pop dx 
+ 0060  88 10				mov [bx+si],dl 
+ 0062  46				inc si 
+ 0063  E2 FA				loop deci_s2 
+				 
+ 0065  C3				ret 
+				;----------------------------------------------
+				------- 
+				;;进行除法运算，dword除以word，得到
+				dword。 
+				;(ax)=dword.(dx)=word.(cx)=除数 
+				;结果放入dx高位，ax放入低位，cx保�
+				��余数。 
+				;----------------------------------------------
+				------- 
+				 
+ 0066				divdw: 
+ 0066  56					push si 
+ 0067  57					push di 
+				 
+ 0068  8B F0					mov si,ax	;保存低字 
+ 006A  B8 0000					mov ax,0 
+ 006D  92					xchg dx,ax	;把高位数�
+				�表示成32位 
+ 006E  F7 F1					div cx 
+ 0070  8B F8					mov di,ax	;把商保存�
+				�来 
+ 0072  8B C6					mov ax,si 	;把低字恢�
+				� 
+ 0074  F7 F1					div cx 
+ 0076  8B CA					mov cx,dx	;余数放入cx
+				 
+ 0078  8B D7					mov dx,di 
+						 
+ 007A  5F					pop di 
+ 007B  5E					pop si 
+ 007C  C3					ret 
+				 
+ 007D				codesg ends 
+				end start 
+Microsoft (R) Macro Assembler Version 5.00                  1/3/19 10:46:41
+                                                             Symbols-1
+
+
+Segments and Groups:
+
+                N a m e         	Length	 Align	Combine Class
+
+CODESG . . . . . . . . . . . . .  	007D	PARA	NONE	
+DATASG . . . . . . . . . . . . .  	001D	PARA	NONE	
+STK  . . . . . . . . . . . . . .  	00C8	PARA	STACK	
+
+Symbols:            
+
+                N a m e         	Type	 Value	 Attr
+
+COUNT  . . . . . . . . . . . . .  	NUMBER	0004	
+
+DECI . . . . . . . . . . . . . .  	L NEAR	0031	CODESG
+DECI_RET . . . . . . . . . . . .  	L NEAR	0056	CODESG
+DECI_S0  . . . . . . . . . . . .  	L NEAR	0054	CODESG
+DECI_S1  . . . . . . . . . . . .  	L NEAR	0042	CODESG
+DECI_S2  . . . . . . . . . . . .  	L NEAR	005F	CODESG
+DIVDW  . . . . . . . . . . . . .  	L NEAR	0066	CODESG
+
+MSTR . . . . . . . . . . . . . .  	L BYTE	0012	DATASG
+MSTR2  . . . . . . . . . . . . .  	L WORD	001B	DATASG
+MY_TEST  . . . . . . . . . . . .  	L NEAR	001C	CODESG
+
+START  . . . . . . . . . . . . .  	L NEAR	0000	CODESG
+
+TMP2 . . . . . . . . . . . . . .  	L DWORD	0000	DATASG
+TMP3 . . . . . . . . . . . . . .  	L BYTE	0004	DATASG	Length = 000A
+TMP4 . . . . . . . . . . . . . .  	L WORD	000E	DATASG
+
+@FILENAME  . . . . . . . . . . .  	TEXT  tst_unit		
+
+
+    117 Source  Lines
+    117 Total   Lines
+     19 Symbols
+
+  50014 + 451186 Bytes symbol space free
+
+      0 Warning Errors
+      0 Severe  Errors
