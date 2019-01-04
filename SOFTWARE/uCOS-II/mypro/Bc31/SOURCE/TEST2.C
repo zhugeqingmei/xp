@@ -7,9 +7,6 @@ youtask运行20次之后，挂起任务mytask;youtask运行40次之后，
 mytask运行10次时使用函数osschedlock对调度器进行加锁，
 当任务运行到第80次的时候，用函数osschedunlock进行解锁
 
-实验3-10，
-任务mytask删除youtask任务。
-
 */
 #include "includes.h"
 
@@ -92,13 +89,8 @@ void  MyTask (void *pdata)
 
         // if(count == 80)
         // {
-        //   OSSchedUnlock();
+        //     OSSchedUnlock();
         // }
-        
-        while(OSTaskDelReq(2) != OS_TASK_NOT_EXIST)
-        {
-            OSTimeDly(1);
-        }
                                                  
         PC_DispChar(x, y,       //在x，y位置显示s中的字符
         *(char*)pdata, 
@@ -132,7 +124,6 @@ void  YouTask (void *pdata)
 
     for (;;) 
 	{        
-
         if (x>50) 
 		{
 		   x=0;
@@ -144,26 +135,21 @@ void  YouTask (void *pdata)
         *------------------------------
         */
 
-        // if(count == 20)
-        // {
-        //     OSTaskSuspend(0);
-        // }
+        if(count == 20)
+        {
+            OSTaskSuspend(0);
+        }
 
-        // if(count == 40)
-        // {
-        //     OSTaskResume(0);
-        // }
+        if(count == 40)
+        {
+            OSTaskResume(0);
+        }
                                                  
         PC_DispChar(x, y,		//在x，y位置显示s中的字符
 		*(char*)pdata, 
 		DISP_BGND_BLACK+DISP_FGND_WHITE );
-       	x += 1;                            
+       		x += 1;                         
 
-        if(OSTaskDelReq(OS_PRIO_SELF) == OS_TASK_DEL_REQ)
-        {
-            OSTaskDel(OS_PRIO_SELF);
-        }
-        
         count++;
         OSTimeDlyHMSM(0, 0, 1, 0);  //等待
     }
