@@ -1,0 +1,6 @@
+bcc -c -ml -Ie:\bc3.1\include -Le:\bc3.1\lib test.c
+tlink e:\bc3.1\lib\c0l.obj test.obj,test,test,e:\bc3.1\lib\cl.lib
+;自己使用了另外一个程序
+bcc -c -ml -Ie:\bc\include -Le:\bc\lib test.c
+tlink e:\bc\lib\c0l.obj test.obj,test,test,e:\bc\lib\cl.lib
+参考：http://www.only2fire.com/archives/15.html
