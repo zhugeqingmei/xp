@@ -1,154 +1,62 @@
-//ÎÒÃÇÕâ¸ö³ÌĞòÍê³ÉµÄÊÇÊµÑé3-6,3-7
+/*
+å®éªŒï¼šå»ºç«‹ä¸‰ä¸ªä»»åŠ¡ï¼Œåˆ†åˆ«æ˜¾ç¤ºä¸€ä¸ªå­—æ¯ï¼Œæœ‰ä¸åŒçš„å»¶è¿Ÿæ—¶é—´ã€‚
+
+å®éªŒï¼šä¸€ä¸ªä»»åŠ¡æŸ¥è¯¢å¦å¤–ä¸¤ä¸ªä»»åŠ¡ï¼Œå¹¶æ˜¾ç¤ºå‡ºæ¥ã€‚
+
+å®éªŒï¼šå½“è®¡æ•°è¾¾åˆ°è¦æ±‚ï¼Œåˆ é™¤ä¸¤ä¸ªä»»åŠ¡
+
+å®éªŒï¼šæ˜¾ç¤ºå½“å‰çš„tcbæŒ‡é’ˆ
+*/
 #include "includes.h"
 
-#define  TASK_STK_SIZE   512			//ÈÎÎñ¶ÑÕ»³¤¶È
+#define  TASK_STK_SIZE   512			//ä»»åŠ¡å †æ ˆé•¿åº¦
 
-OS_STK   MyTaskStk[TASK_STK_SIZE];       //¶¨ÒåÈÎÎñ¶ÑÕ»Çø
-OS_STK   YouTaskStk[TASK_STK_SIZE];		//¶¨ÒåÈÎÎñ¶ÑÕ»Çø
-INT16S   key;					//ÓÃÓÚÍË³öuCOS_IIµÄ¼ü	
-INT8U	 x=0,y=0;				//×Ö·ûÏÔÊ¾Î»ÖÃ
+OS_STK   MyTaskStk[TASK_STK_SIZE];       //å®šä¹‰ä»»åŠ¡å †æ ˆåŒº
+OS_STK   YouTaskStk[TASK_STK_SIZE];		//å®šä¹‰ä»»åŠ¡å †æ ˆåŒº
+OS_STK   You2TaskStk[TASK_STK_SIZE];     //å®šä¹‰ä»»åŠ¡å †æ ˆåŒº
+INT16S   key;					//ç”¨äºé€€å‡ºuCOS_IIçš„é”®	
+INT8U	 x=0,y=0;				//å­—ç¬¦æ˜¾ç¤ºä½ç½®
 
-void  MyTask2(void *data);           //ÉùÃ÷Ò»¸öÈÎÎñ
+void conver_string(OS_TCB* num, char* str);
 
-void  YouTask2(void *data);			//ÉùÃ÷Ò»¸öÈÎÎñ
+void  YouTask2(void *data);			//å£°æ˜ä¸€ä¸ªä»»åŠ¡
 
-void  MyTask(void *data);           //ÉùÃ÷Ò»¸öÈÎÎñ£¬Ëüµ÷ÓÃÏÂÃæµÄº¯Êı
-void  YouTask(void *data);          //ÉùÃ÷Ò»¸öÈÎÎñ
-void  TaskInit(void);
-/************************Ö÷º¯Êı*********************************************/
+void  MyTask(void *data);           //å£°æ˜ä¸€ä¸ªä»»åŠ¡ï¼Œå®ƒè°ƒç”¨ä¸‹é¢çš„å‡½æ•°
+void  YouTask(void *data);          //å£°æ˜ä¸€ä¸ªä»»åŠ¡
+/************************ä¸»å‡½æ•°*********************************************/
 void  main (void)
 {
-    //Õâ¸öº¯ÊıÄÜ¹»µ÷ÓÃÒ»¸öÈÎÎñ¡£----------------------------------------
-    // char* s="M";                //¶¨ÒåÒªÏÔÊ¾µÄ×Ö·û
+    //è¿™ä¸ªå‡½æ•°èƒ½å¤Ÿè°ƒç”¨ä¸€ä¸ªä»»åŠ¡ã€‚----------------------------------------
+    char* s="M";                //å®šä¹‰è¦æ˜¾ç¤ºçš„å­—ç¬¦
 
-    // OSInit();                   //³õÊ¼»¯uCOS_II
+    OSInit();                   //åˆå§‹åŒ–uCOS_II
 
-    // PC_DOSSaveReturn();             //±£´æDos»·¾³
-    // PC_VectSet(uCOS, OSCtxSw);          //°²×°uCOS_IIÖĞ¶Ï
+    PC_DOSSaveReturn();         //ä¿å­˜Dosç¯å¢ƒ
+    PC_VectSet(uCOS, OSCtxSw);  //å®‰è£…uCOS_IIä¸­æ–­
 
-    // OSTaskCreate(MyTask2,            //´´½¨ÈÎÎñMyTask
-    //     s,              //¸øÈÎÎñ´«µİ²ÎÊı
-    //     &MyTaskStk[TASK_STK_SIZE - 1],//ÉèÖÃÈÎÎñ¶ÑÕ»Õ»¶¥Ö¸Õë
-    //     0);             //Ê¹ÈÎÎñMyTaskµÄÓÅÏÈ¼¶±ğÎª0
+    OSTaskCreate(MyTask,        //åˆ›å»ºä»»åŠ¡MyTask
+        s,              //ç»™ä»»åŠ¡ä¼ é€’å‚æ•°
+        &MyTaskStk[TASK_STK_SIZE - 1],//è®¾ç½®ä»»åŠ¡å †æ ˆæ ˆé¡¶æŒ‡é’ˆ
+        0);             //ä½¿ä»»åŠ¡MyTaskçš„ä¼˜å…ˆçº§åˆ«ä¸º0
 
-    // OSStart();                  //Æô¶¯uCOS_IIµÄ¶àÈÎÎñ¹ÜÀí
+    OSStart();                  //å¯åŠ¨uCOS_IIçš„å¤šä»»åŠ¡ç®¡ç†
 
-    /*--------------------------------------
-    *ÎÒÃÇ¶¨ÒåÁËÓÅÏÈ¼¶£¬µ«ÊÇÓÅÏÈ¼¶²¢Ã»ÓĞ²úÉú×÷ÓÃ£¬µ«ÊÇ£ºµÚÒ»¸öÈÎÎñ²»¶Ï¶Ô
-    ÎÒÃÇµÄÏµÍ³Ò»°ãµÄ²ÎÊı½øĞĞÉèÖÃ£¬Õâ¸öÊÇÓĞÎÊÌâµÄ¡£
-    */
-    char* s_m="M";                //¶¨ÒåÒªÏÔÊ¾µÄ×Ö·û
-    char* s_y="Y";				//¶¨ÒåÒªÏÔÊ¾µÄ×Ö·û
-
-    OSInit();					//³õÊ¼»¯uCOS_II
-
-    PC_DOSSaveReturn();				//±£´æDos»·¾³
-    PC_VectSet(uCOS, OSCtxSw);			//°²×°uCOS_IIÖĞ¶Ï
-
-    //TaskInit();
-    OSTaskCreate(YouTask2,            //´´½¨ÈÎÎñMyTask
-        s_y,              //¸øÈÎÎñ´«µİ²ÎÊı
-        &YouTaskStk[TASK_STK_SIZE - 1],//ÉèÖÃÈÎÎñ¶ÑÕ»Õ»¶¥Ö¸Õë
-        2);             //Ê¹ÈÎÎñYouTaskµÄÓÅÏÈ¼¶±ğÎª2
-
-    OSTaskCreate(MyTask2,            //´´½¨ÈÎÎñMyTask
-        s_m,              //¸øÈÎÎñ´«µİ²ÎÊı
-        &MyTaskStk[TASK_STK_SIZE - 1],//ÉèÖÃÈÎÎñ¶ÑÕ»Õ»¶¥Ö¸Õë
-        3);             //Ê¹ÈÎÎñMyTaskµÄÓÅÏÈ¼¶±ğÎª0
-    OSStart();					//Æô¶¯uCOS_IIµÄ¶àÈÎÎñ¹ÜÀí
-}
-
-/*
-½ö½ö°Ñ³õÊ¼»¯µÄ¹¤×÷ÄÃ³öÀ´
-*/
-void TaskInit()
-{
-    #if OS_CRITICAL_METHOD == 3
-    OS_CPU_SR  cpu_sr;
-    #endif
-    OS_ENTER_CRITICAL(); 
-    PC_VectSet(0x08, OSTickISR);    //°²×°uCOS_IIÊ±ÖÓÖĞ¶ÏÏòÁ¿
-    PC_SetTickRate(OS_TICKS_PER_SEC);   //ÉèÖÃuCOS_IIÊ±ÖÓÆµÂÊ
-    OS_EXIT_CRITICAL();
-
-    OSStatInit();           //³õÊ¼»¯uCOS_IIµÄÍ³¼ÆÈÎÎñ
-}
-
-
-/**
-* 
-*/
-
-void  MyTask2 (void *pdata)
-{
-#if OS_CRITICAL_METHOD == 3
-    OS_CPU_SR  cpu_sr;
-#endif
-
-    pdata = pdata; 
-
-    TaskInit();
-    for (;;) 
-    {        
-        if (x>50) 
-        {
-           x=0;
-           y+=2; 
-        }
-                                                 
-        PC_DispChar(x, y,       //ÔÚx£¬yÎ»ÖÃÏÔÊ¾sÖĞµÄ×Ö·û
-        *(char*)pdata, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-            x += 1;                         
-
-        //Èç¹û°´ÏÂEsc¼üÔòÍË³öuCOS_II
-        if (PC_GetKey(&key) == TRUE) 
-        {
-            if (key == 0x1B) 
-        {
-                PC_DOSReturn();
-            }
-        }
-
-        OSTimeDlyHMSM(0, 0, 1, 0);  //µÈ´ı
-    }
-}
-
-
-void  YouTask2 (void *pdata)
-{
-#if OS_CRITICAL_METHOD == 3
-    OS_CPU_SR  cpu_sr;
-#endif
-
-    pdata = pdata; 
-    TaskInit();
-    for (;;) 
-    {        
-        if (x>50) 
-        {
-           x=0;
-           y+=2; 
-        }
-                                                 
-        PC_DispChar(x, y,       //ÔÚx£¬yÎ»ÖÃÏÔÊ¾sÖĞµÄ×Ö·û
-        *(char*)pdata, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-            x += 1;                         
-
-        OSTimeDlyHMSM(0, 0, 1, 0);  //µÈ´ı
-    }
+    
 }
 
 
 /**
 *-------------------------------------------------------------
- Õâ¸öÈÎÎñµ÷¶ÈÁíÍâÒ»¸öÈÎÎñ¡£
+ è¿™ä¸ªä»»åŠ¡è°ƒåº¦å¦å¤–ä¸€ä¸ªä»»åŠ¡ã€‚3-7
 */
 
 void  MyTask (void *pdata)
 {
     char *s = "Y";
+    char *s2 = "T";
+    INT8U count = 0;
+    OS_TCB tmp_tcb;
+    char tmp_str[33];
 #if OS_CRITICAL_METHOD == 3
     OS_CPU_SR  cpu_sr;
 #endif
@@ -156,11 +64,11 @@ void  MyTask (void *pdata)
     pdata = pdata; 
 
     OS_ENTER_CRITICAL();
-    PC_VectSet(0x08, OSTickISR);    //°²×°uCOS_IIÊ±ÖÓÖĞ¶ÏÏòÁ¿
-    PC_SetTickRate(OS_TICKS_PER_SEC);   //ÉèÖÃuCOS_IIÊ±ÖÓÆµÂÊ
+    PC_VectSet(0x08, OSTickISR);    //å®‰è£…uCOS_IIæ—¶é’Ÿä¸­æ–­å‘é‡
+    PC_SetTickRate(OS_TICKS_PER_SEC);   //è®¾ç½®uCOS_IIæ—¶é’Ÿé¢‘ç‡
     OS_EXIT_CRITICAL();
 
-    OSStatInit();           //³õÊ¼»¯uCOS_IIµÄÍ³¼ÆÈÎÎñ
+    OSStatInit();           //åˆå§‹åŒ–uCOS_IIçš„ç»Ÿè®¡ä»»åŠ¡
 
     OSTaskCreate(
         YouTask,
@@ -168,21 +76,56 @@ void  MyTask (void *pdata)
         &YouTaskStk[TASK_STK_SIZE - 1],
         2
         );
+    /**
+    å»ºç«‹å¦å¤–ä¸€ä¸ªä»»åŠ¡
+    */
+    OSTaskCreate(
+        YouTask2,
+        s2,
+        &You2TaskStk[TASK_STK_SIZE - 1],
+        3
+        );
 
     for (;;) 
     {        
+        //æ˜¾ç¤ºå½“å‰ä»»åŠ¡çš„tcbæŒ‡é’ˆ
+        conver_string(OSTCBCur,tmp_str);
+        PC_DispStr(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
+        tmp_str, 
+        DISP_BGND_BLACK+DISP_FGND_WHITE );
+        x = 0;
+        y += 1;
+
+        //æ˜¾ç¤ºå½“å‰ä»»åŠ¡çš„tcbæŒ‡é’ˆ
+        conver_string(OSTCBPrioTbl[0],tmp_str);
+        PC_DispStr(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
+        tmp_str, 
+        DISP_BGND_BLACK+DISP_FGND_WHITE );
+        x = 0;
+        y += 1;
+
         if (x>50) 
         {
            x=0;
            y+=2; 
         }
+        // //åˆ é™¤ä»»åŠ¡
+        // if(count == 3)
+        // {
+        //     OSTaskDelReq(2);
+        // }
+        // if(count == 6)
+        // {
+        //     OSTaskDelReq(3);
+        // }
+
                                                  
-        PC_DispChar(x, y,       //ÔÚx£¬yÎ»ÖÃÏÔÊ¾sÖĞµÄ×Ö·û
+        PC_DispChar(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
         *(char*)pdata, 
         DISP_BGND_BLACK+DISP_FGND_WHITE );
             x += 1;                         
 
-        //Èç¹û°´ÏÂEsc¼üÔòÍË³öuCOS_II
+        //å¦‚æœæŒ‰ä¸‹Escé”®åˆ™é€€å‡ºuCOS_II
         if (PC_GetKey(&key) == TRUE) 
         {
             if (key == 0x1B) 
@@ -190,13 +133,33 @@ void  MyTask (void *pdata)
                 PC_DOSReturn();
             }
         }
+        //æŸ¥è¯¢ä»»åŠ¡
+        // if(OSTaskQuery(2,&tmp_tcb) == OS_NO_ERR)
+        // {
+        //     PC_DispChar(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
+        // (INT8U)(tmp_tcb.OSTCBPrio+0x30), 
+        // DISP_BGND_BLACK+DISP_FGND_WHITE );
+        //     x++;
+        // }
 
-        OSTimeDlyHMSM(0, 0, 3, 0);  //µÈ´ı
+        // //æŸ¥è¯¢ä»»åŠ¡
+        //  if(OSTaskQuery(3,&tmp_tcb) == OS_NO_ERR)
+        // {
+        //     PC_DispChar(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
+        // (INT8U)(tmp_tcb.OSTCBPrio+0x30), 
+        // DISP_BGND_BLACK+DISP_FGND_WHITE );
+        //     x++;
+        // }
+
+        OSTimeDlyHMSM(0, 0, 3, 0);  //ç­‰å¾…
+        count++;
+
     }
 }
 
 void  YouTask (void *pdata)
 {
+    char tmp_str[33];
 #if OS_CRITICAL_METHOD == 3
     OS_CPU_SR  cpu_sr;
 #endif
@@ -205,18 +168,122 @@ void  YouTask (void *pdata)
 
     for (;;) 
 	{        
+        //æ˜¾ç¤ºå½“å‰ä»»åŠ¡çš„tcbæŒ‡é’ˆ
+        conver_string(OSTCBCur,tmp_str);
+        PC_DispStr(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
+        tmp_str, 
+        DISP_BGND_BLACK+DISP_FGND_WHITE );
+        x = 0;
+        y += 1;
+
+
+          //æ˜¾ç¤ºå½“å‰ä»»åŠ¡çš„tcbæŒ‡é’ˆ
+        conver_string(OSTCBPrioTbl[2],tmp_str);
+        PC_DispStr(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
+        tmp_str, 
+        DISP_BGND_BLACK+DISP_FGND_WHITE );
+        x = 0;
+        y += 1;
+
         if (x>50) 
 		{
 		   x=0;
 		   y+=2; 
 		}
-                                                 
-        PC_DispChar(x, y,		//ÔÚx£¬yÎ»ÖÃÏÔÊ¾sÖĞµÄ×Ö·û
+        //æ£€æµ‹æ˜¯å¦éœ€è¦åˆ é™¤è‡ªå·±
+        if(OSTaskDelReq(OS_PRIO_SELF) == OS_TASK_DEL_REQ)
+        {
+            OSTaskDel(OS_PRIO_SELF);
+        }
+                                  
+        PC_DispChar(x, y,		//åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
 		*(char*)pdata, 
 		DISP_BGND_BLACK+DISP_FGND_WHITE );
-       		x += 1;                         
+       	x += 1;                            
 
-        OSTimeDlyHMSM(0, 0, 1, 0);	//µÈ´ı
+        if(OSTaskDelReq(OS_PRIO_SELF) == OS_TASK_DEL_REQ)
+        {
+            OSTaskDel(OS_PRIO_SELF);
+        }
+
+        OSTimeDlyHMSM(0, 0, 3, 0);  //ç­‰å¾…
     }
 }
 
+
+void  YouTask2 (void *pdata)
+{
+
+    char tmp_str[33];
+#if OS_CRITICAL_METHOD == 3
+    OS_CPU_SR  cpu_sr;
+#endif
+
+    pdata = pdata; 
+
+    for (;;) 
+    {   
+
+        //æ˜¾ç¤ºå½“å‰ä»»åŠ¡çš„tcbæŒ‡é’ˆ
+        conver_string(OSTCBCur,tmp_str);
+        PC_DispStr(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
+        tmp_str, 
+        DISP_BGND_BLACK+DISP_FGND_WHITE );
+        x = 0;
+        y += 1;
+
+        //æ˜¾ç¤ºå½“å‰ä»»åŠ¡çš„tcbæŒ‡é’ˆ
+        conver_string(OSTCBPrioTbl[3],tmp_str);
+        PC_DispStr(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
+        tmp_str, 
+        DISP_BGND_BLACK+DISP_FGND_WHITE );
+        x = 0;
+        y += 1;
+
+        if(OSTaskDelReq(OS_PRIO_SELF) == OS_TASK_DEL_REQ)
+        {
+            OSTaskDel(OS_PRIO_SELF);
+        }
+
+        if (x>50) 
+        {
+           x=0;
+           y+=2; 
+        }
+                                  
+        PC_DispChar(x, y,       //åœ¨xï¼Œyä½ç½®æ˜¾ç¤ºsä¸­çš„å­—ç¬¦
+        *(char*)pdata, 
+        DISP_BGND_BLACK+DISP_FGND_WHITE );
+        x += 1;                            
+        
+        
+
+        if(OSTaskDelReq(OS_PRIO_SELF) == OS_TASK_DEL_REQ)
+        {
+            OSTaskDel(OS_PRIO_SELF);
+        }
+
+        OSTimeDlyHMSM(0, 0, 3, 0);  //ç­‰å¾…
+    }
+}
+/*æŠŠä¸€ä¸ª32ä½æŒ‡é’ˆè½¬æ¢æˆå­—ç¬¦ä¸²*/
+void conver_string(OS_TCB* num, char* str)
+{
+    int*  num_int = (int *)num;
+    int num_cp = *num_int;
+    int n = 0;
+    int tmp = 0, index = 0;
+    while(n<8)
+    {
+        tmp = ((num_cp & 0xF0000000) >> 28);
+        if(tmp < 10)
+        {
+            str[index++] = 0x30 + tmp;
+        }else{
+            str[index++] = 0x37 + tmp;
+        }
+        n++;
+        num_cp <<= 4;
+    }
+    str[index] = '\0';
+}
