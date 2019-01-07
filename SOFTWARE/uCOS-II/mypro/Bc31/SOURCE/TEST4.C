@@ -6,10 +6,6 @@
 4-2，建立三个任务，第三个任务使用函数OSTimeTickHook()中断了
 10000次时使用一个信号变量InterKey激活的。
 
-4-3,任务的延时和恢复。
-
-4-4，显示节拍变量和设定节拍
-
 */
 #include "includes.h"
 
@@ -20,11 +16,8 @@ OS_STK   YouTaskStk[TASK_STK_SIZE];     //定义任务堆栈区
 OS_STK   InterTaskStk[TASK_STK_SIZE];		//定义任务堆栈区
 INT16S   key;					//用于退出uCOS_II的键	
 INT8U	 x=0,y=0;				//字符显示位置
-BOOLEAN  InterKey = FALSE;
-INT8U    count = 0;                         //记录时间
-INT32U   stime = 0;                     //记录系统节拍，
-
-char *ss = "running the task InterTask.";
+BOOLEAN InterKey = FALSE;
+char *s = "running the task InterTask.";
 void  MyTask(void *data);           //声明一个任务，它调用下面的函数
 void YouTask(void *data);
 void InterTask(void *pdata);
@@ -56,7 +49,6 @@ void  main (void)
 
 void  MyTask (void *pdata)
 {
-    char s[5];
 #if OS_CRITICAL_METHOD == 3
     OS_CPU_SR  cpu_sr;
 #endif
@@ -73,12 +65,12 @@ void  MyTask (void *pdata)
     OSTaskCreate(YouTask,            //创建任务MyTask
         "Y",              //给任务传递参数
         &YouTaskStk[TASK_STK_SIZE - 1],//设置任务堆栈栈顶指针
-        3);             //使任务MyTask的优先级别为0
+        1);             //使任务MyTask的优先级别为0
 
-    // OSTaskCreate(InterTask,            //创建任务MyTask
-    //     "H",              //给任务传递参数
-    //     &InterTaskStk[TASK_STK_SIZE - 1],//设置任务堆栈栈顶指针
-    //     2);             //使任务MyTask的优先级别为0
+    OSTaskCreate(InterTask,            //创建任务MyTask
+        "H",              //给任务传递参数
+        &InterTaskStk[TASK_STK_SIZE - 1],//设置任务堆栈栈顶指针
+        2);             //使任务MyTask的优先级别为0
 
     for (;;) 
     {        
@@ -87,38 +79,22 @@ void  MyTask (void *pdata)
            x=0;
            y+=2; 
         }
-                  
-        //if(y>1) OSTimeDlyResume(3);   //唤醒优先级是3的任务
-
-        if(count == 10)
-        {
-            OSTimeSet(10);
-        }
-
-        stime = OSTimeGet();
-        sprintf(s,"%5d",stime); //这个技巧很厉害
-        PC_DispStr(5, 10,       //在x，y位置显示s中的字符
-            s, 
-            DISP_BGND_BLACK+DISP_FGND_WHITE );
-
-
+                                                 
         PC_DispChar(x, y,       //在x，y位置显示s中的字符
-            *(char*)pdata, 
-            DISP_BGND_BLACK+DISP_FGND_WHITE );
-        
-        x += 1;                         
+        *(char*)pdata, 
+        DISP_BGND_BLACK+DISP_FGND_WHITE );
+            x += 1;                         
 
         //如果按下Esc键则退出uCOS_II
         if (PC_GetKey(&key) == TRUE) 
         {
             if (key == 0x1B) 
-            {
+        {
                 PC_DOSReturn();
             }
         }
-        count++;
-        //OSTimeDlyHMSM(0, 0, 1, 0);  //等待
-        OSTimeDly(100);
+
+        OSTimeDlyHMSM(0, 0, 3, 0);  //等待
     }
 }
 
@@ -139,47 +115,46 @@ void  YouTask (void *pdata)
         }
                                                  
         PC_DispChar(x, y,       //在x，y位置显示s中的字符
-            *(char*)pdata, 
-            DISP_BGND_BLACK+DISP_FGND_WHITE );
-        x += 1;                         
+        *(char*)pdata, 
+        DISP_BGND_BLACK+DISP_FGND_WHITE );
+            x += 1;                         
 
-        //OSTimeDlyHMSM(0, 0, 1, 0);  //等待
-        OSTimeDly(400);
+        OSTimeDlyHMSM(0, 0, 1, 0);  //等待
     }
 }
 
 
 
-// void  InterTask (void *pdata)
-// {
-// #if OS_CRITICAL_METHOD == 3
-//     OS_CPU_SR  cpu_sr;
-// #endif
+void  InterTask (void *pdata)
+{
+#if OS_CRITICAL_METHOD == 3
+    OS_CPU_SR  cpu_sr;
+#endif
 
-//     pdata = pdata; 
+    pdata = pdata; 
 
-//     for (;;) 
-//     {    
-//         if(InterKey)
-//         {
-//             if (x>50) 
-//             {
-//                x=0;
-//                y+=2; 
-//             }
+    for (;;) 
+    {    
+        if(InterKey)
+        {
+            if (x>50) 
+            {
+               x=0;
+               y+=2; 
+            }
                                                      
-//             PC_DispChar(x, y,       //在x，y位置显示s中的字符
-//                 *(char*)pdata, 
-//                 DISP_BGND_BLACK+DISP_FGND_WHITE );
+            PC_DispChar(x, y,       //在x，y位置显示s中的字符
+                *(char*)pdata, 
+                DISP_BGND_BLACK+DISP_FGND_WHITE );
 
-//             PC_DispStr(5,6,ss,
-//                 DISP_BGND_BLACK+DISP_FGND_WHITE);
-//             x += 1;                       
-//         }    
+            PC_DispStr(5,6,s,
+                DISP_BGND_BLACK+DISP_FGND_WHITE);
+            x += 1;                       
+        }    
 
-//         InterKey = FALSE;
-//         //OSIntNesting--;
-//         OSTimeDlyHMSM(0, 0, 1, 0);  //等待
-//     }
-// }
+        InterKey = FALSE;
+        //OSIntNesting--;
+        OSTimeDlyHMSM(0, 0, 1, 0);  //等待
+    }
+}
 

@@ -1,5 +1,5 @@
 ;本来要对《接口》里面的例题进行复习，但是发现自己还是无法做到。
-
+assume ds:data,ss:stack1
 data segment
 BUFFER	DW 789AH
 		DW 1234H
@@ -18,8 +18,9 @@ extra segment
  mch db 11 dup (?)
 extra ends
 
-stack1 segment stack
-	db 16 dup (0)
+stack1 segment
+	sta db 16 dup (0)
+	top equ length sta
 stack1 ends
 
 code segment
@@ -28,9 +29,15 @@ assume cs:code,ss:stack1
 
 
 START:	
-		call string
+		call test_stack
 		mov ax,4c00h
 		int 21h
+
+test_stack:
+		mov ax,stack1
+		mov ss,ax
+		mov sp,top
+		ret
 
 ;进行串操作的实验
 ;默认条件：

@@ -1,62 +1,62 @@
 /*
-实验：建立三个任务，分别显示一个字母，有不同的延迟时间。
 
-实验：一个任务查询另外两个任务，并显示出来。
+第4章，在3-6的基础上（建立MyTask，每秒显示M）修改,问题：
+中文显示的问题，这个实验实际是在3-7基础上进行的。
 
-实验：当计数达到要求，删除两个任务
+4-2，建立三个任务，第三个任务使用函数OSTimeTickHook()中断了
+10000次时使用一个信号变量InterKey激活的。
 
-实验：显示当前的tcb指针,但是后两个任务的tcb相同？？？？
+4-3,任务的延时和恢复。
+
+4-4，显示节拍变量和设定节拍
+
 */
 #include "includes.h"
 
 #define  TASK_STK_SIZE   512			//任务堆栈长度
 
 OS_STK   MyTaskStk[TASK_STK_SIZE];       //定义任务堆栈区
-OS_STK   YouTaskStk[TASK_STK_SIZE];		//定义任务堆栈区
-OS_STK   You2TaskStk[TASK_STK_SIZE];     //定义任务堆栈区
+OS_STK   YouTaskStk[TASK_STK_SIZE];     //定义任务堆栈区
+OS_STK   InterTaskStk[TASK_STK_SIZE];		//定义任务堆栈区
 INT16S   key;					//用于退出uCOS_II的键	
 INT8U	 x=0,y=0;				//字符显示位置
+BOOLEAN  InterKey = FALSE;
+INT8U    count = 0;                         //记录时间
+INT32U   stime = 0;                     //记录系统节拍，
 
-void conver_string(OS_TCB* num, char* str);
-
-void  YouTask2(void *data);			//声明一个任务
-
+char *ss = "running the task InterTask.";
 void  MyTask(void *data);           //声明一个任务，它调用下面的函数
-void  YouTask(void *data);          //声明一个任务
+void YouTask(void *data);
+void InterTask(void *pdata);
 /************************主函数*********************************************/
 void  main (void)
 {
-    //这个函数能够调用一个任务。----------------------------------------
-    char* s="M";                //定义要显示的字符
+   
+    /*--------------------------------------
+    *我们定义了优先级，但是优先级并没有产生作用，但是：第一个任务不断对
+    我们的系统一般的参数进行设置，这个是有问题的。
+    */
+    char* s_m="M";                //定义要显示的字符
+    OSInit();					//初始化uCOS_II
 
-    OSInit();                   //初始化uCOS_II
+    PC_DOSSaveReturn();				//保存Dos环境
+    PC_VectSet(uCOS, OSCtxSw);			//安装uCOS_II中断
 
-    PC_DOSSaveReturn();         //保存Dos环境
-    PC_VectSet(uCOS, OSCtxSw);  //安装uCOS_II中断
-
-    OSTaskCreate(MyTask,        //创建任务MyTask
-        s,              //给任务传递参数
+    OSTaskCreate(MyTask,            //创建任务MyTask
+        s_m,              //给任务传递参数
         &MyTaskStk[TASK_STK_SIZE - 1],//设置任务堆栈栈顶指针
         0);             //使任务MyTask的优先级别为0
-
-    OSStart();                  //启动uCOS_II的多任务管理
-
-    
+    OSStart();					//启动uCOS_II的多任务管理
 }
-
 
 /**
 *-------------------------------------------------------------
- 这个任务调度另外一个任务。3-7
+ 这个任务调度另外一个任务。
 */
 
 void  MyTask (void *pdata)
 {
-    char *s = "Y";
-    char *s2 = "T";
-    INT8U count = 0;
-    OS_TCB tmp_tcb;
-    char tmp_str[33];
+    char s[5];
 #if OS_CRITICAL_METHOD == 3
     OS_CPU_SR  cpu_sr;
 #endif
@@ -70,96 +70,60 @@ void  MyTask (void *pdata)
 
     OSStatInit();           //初始化uCOS_II的统计任务
 
-    OSTaskCreate(
-        YouTask,
-        s,
-        &YouTaskStk[TASK_STK_SIZE - 1],
-        2
-        );
-    /**
-    建立另外一个任务
-    */
-    OSTaskCreate(
-        YouTask2,
-        s2,
-        &You2TaskStk[TASK_STK_SIZE - 1],
-        3
-        );
+    OSTaskCreate(YouTask,            //创建任务MyTask
+        "Y",              //给任务传递参数
+        &YouTaskStk[TASK_STK_SIZE - 1],//设置任务堆栈栈顶指针
+        3);             //使任务MyTask的优先级别为0
+
+    // OSTaskCreate(InterTask,            //创建任务MyTask
+    //     "H",              //给任务传递参数
+    //     &InterTaskStk[TASK_STK_SIZE - 1],//设置任务堆栈栈顶指针
+    //     2);             //使任务MyTask的优先级别为0
 
     for (;;) 
     {        
-        //显示当前任务的tcb指针
-        conver_string(OSTCBCur,tmp_str);
-        PC_DispStr(x, y,       //在x，y位置显示s中的字符
-        tmp_str, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-        x = 0;
-        y += 1;
-
-        //显示当前任务的tcb指针
-        conver_string(OSTCBPrioTbl[0],tmp_str);
-        PC_DispStr(x, y,       //在x，y位置显示s中的字符
-        tmp_str, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-        x = 0;
-        y += 1;
-
         if (x>50) 
         {
            x=0;
            y+=2; 
         }
-        // //删除任务
-        // if(count == 3)
-        // {
-        //     OSTaskDelReq(2);
-        // }
-        // if(count == 6)
-        // {
-        //     OSTaskDelReq(3);
-        // }
+                  
+        //if(y>1) OSTimeDlyResume(3);   //唤醒优先级是3的任务
 
-                                                 
+        if(count == 10)
+        {
+            OSTimeSet(10);
+        }
+
+        stime = OSTimeGet();
+        sprintf(s,"%5d",stime); //这个技巧很厉害
+        PC_DispStr(5, 10,       //在x，y位置显示s中的字符
+            s, 
+            DISP_BGND_BLACK+DISP_FGND_WHITE );
+
+
         PC_DispChar(x, y,       //在x，y位置显示s中的字符
-        *(char*)pdata, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-            x += 1;                         
+            *(char*)pdata, 
+            DISP_BGND_BLACK+DISP_FGND_WHITE );
+        
+        x += 1;                         
 
         //如果按下Esc键则退出uCOS_II
         if (PC_GetKey(&key) == TRUE) 
         {
             if (key == 0x1B) 
-        {
+            {
                 PC_DOSReturn();
             }
         }
-        //查询任务
-        // if(OSTaskQuery(2,&tmp_tcb) == OS_NO_ERR)
-        // {
-        //     PC_DispChar(x, y,       //在x，y位置显示s中的字符
-        // (INT8U)(tmp_tcb.OSTCBPrio+0x30), 
-        // DISP_BGND_BLACK+DISP_FGND_WHITE );
-        //     x++;
-        // }
-
-        // //查询任务
-        //  if(OSTaskQuery(3,&tmp_tcb) == OS_NO_ERR)
-        // {
-        //     PC_DispChar(x, y,       //在x，y位置显示s中的字符
-        // (INT8U)(tmp_tcb.OSTCBPrio+0x30), 
-        // DISP_BGND_BLACK+DISP_FGND_WHITE );
-        //     x++;
-        // }
-
-        OSTimeDlyHMSM(0, 0, 3, 0);  //等待
         count++;
-
+        OSTimeDlyHMSM(0, 0, 1, 0);  //等待
+        //OSTimeDly(100);
     }
 }
 
 void  YouTask (void *pdata)
 {
-    char tmp_str[33];
 #if OS_CRITICAL_METHOD == 3
     OS_CPU_SR  cpu_sr;
 #endif
@@ -167,123 +131,55 @@ void  YouTask (void *pdata)
     pdata = pdata; 
 
     for (;;) 
-	{        
-        //显示当前任务的tcb指针
-        conver_string(OSTCBCur,tmp_str);
-        PC_DispStr(x, y,       //在x，y位置显示s中的字符
-        tmp_str, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-        x = 0;
-        y += 1;
-
-
-          //显示当前任务的tcb指针
-        conver_string(OSTCBPrioTbl[2],tmp_str);
-        PC_DispStr(x, y,       //在x，y位置显示s中的字符
-        tmp_str, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-        x = 0;
-        y += 1;
-
-        if (x>50) 
-		{
-		   x=0;
-		   y+=2; 
-		}
-        //检测是否需要删除自己
-        if(OSTaskDelReq(OS_PRIO_SELF) == OS_TASK_DEL_REQ)
-        {
-            OSTaskDel(OS_PRIO_SELF);
-        }
-                                  
-        PC_DispChar(x, y,		//在x，y位置显示s中的字符
-		*(char*)pdata, 
-		DISP_BGND_BLACK+DISP_FGND_WHITE );
-       	x += 1;                            
-
-        if(OSTaskDelReq(OS_PRIO_SELF) == OS_TASK_DEL_REQ)
-        {
-            OSTaskDel(OS_PRIO_SELF);
-        }
-
-        OSTimeDlyHMSM(0, 0, 3, 0);  //等待
-    }
-}
-
-
-void  YouTask2 (void *pdata)
-{
-
-    char tmp_str[33];
-#if OS_CRITICAL_METHOD == 3
-    OS_CPU_SR  cpu_sr;
-#endif
-
-    pdata = pdata; 
-
-    for (;;) 
-    {   
-
-        //显示当前任务的tcb指针
-        conver_string(OSTCBCur,tmp_str);
-        PC_DispStr(x, y,       //在x，y位置显示s中的字符
-        tmp_str, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-        x = 0;
-        y += 1;
-
-        //显示当前任务的tcb指针
-        conver_string(OSTCBPrioTbl[3],tmp_str);
-        PC_DispStr(x, y,       //在x，y位置显示s中的字符
-        tmp_str, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-        x = 0;
-        y += 1;
-
-        if(OSTaskDelReq(OS_PRIO_SELF) == OS_TASK_DEL_REQ)
-        {
-            OSTaskDel(OS_PRIO_SELF);
-        }
-
+    {        
         if (x>50) 
         {
            x=0;
            y+=2; 
         }
-                                  
+                                                 
         PC_DispChar(x, y,       //在x，y位置显示s中的字符
-        *(char*)pdata, 
-        DISP_BGND_BLACK+DISP_FGND_WHITE );
-        x += 1;                            
-        
-        
+            *(char*)pdata, 
+            DISP_BGND_BLACK+DISP_FGND_WHITE );
+        x += 1;                         
 
-        if(OSTaskDelReq(OS_PRIO_SELF) == OS_TASK_DEL_REQ)
-        {
-            OSTaskDel(OS_PRIO_SELF);
-        }
-
-        OSTimeDlyHMSM(0, 0, 3, 0);  //等待
+        //OSTimeDlyHMSM(0, 0, 1, 0);  //等待
+        OSTimeDly(400);
     }
 }
-/*把一个32位指针转换成字符串*/
-void conver_string(OS_TCB* num, char* str)
-{
-    int*  num_int = (int *)num;
-    int num_cp = *num_int;
-    int n = 0;
-    int tmp = 0, index = 0;
-    while(n<8)
-    {
-        tmp = ((num_cp & 0xF0000000) >> 28);
-        if(tmp < 10)
-        {
-            str[index++] = 0x30 + tmp;
-        }else{
-            str[index++] = 0x37 + tmp;
-        }
-        n++;
-        num_cp <<= 4;
-    }
-    str[index] = '\0';
-}
+
+
+
+// void  InterTask (void *pdata)
+// {
+// #if OS_CRITICAL_METHOD == 3
+//     OS_CPU_SR  cpu_sr;
+// #endif
+
+//     pdata = pdata; 
+
+//     for (;;) 
+//     {    
+//         if(InterKey)
+//         {
+//             if (x>50) 
+//             {
+//                x=0;
+//                y+=2; 
+//             }
+                                                     
+//             PC_DispChar(x, y,       //在x，y位置显示s中的字符
+//                 *(char*)pdata, 
+//                 DISP_BGND_BLACK+DISP_FGND_WHITE );
+
+//             PC_DispStr(5,6,ss,
+//                 DISP_BGND_BLACK+DISP_FGND_WHITE);
+//             x += 1;                       
+//         }    
+
+//         InterKey = FALSE;
+//         //OSIntNesting--;
+//         OSTimeDlyHMSM(0, 0, 1, 0);  //等待
+//     }
+// }
+

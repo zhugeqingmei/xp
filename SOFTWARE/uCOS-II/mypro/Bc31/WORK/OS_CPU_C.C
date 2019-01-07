@@ -323,8 +323,51 @@ void  OSTCBInitHook (OS_TCB *ptcb)
 */
 #if OS_CPU_HOOKS_EN > 0 
 
+// INT16U d = 0;
+// INT16U d1 = 0;
+
+// extern BOOLEAN InterKey;
+// INT16U InterCtr = 0;
+
+INT8U d = 0;
+INT8U l = 0;
+INT16U tt = 1;
+char s[5];
 void  OSTimeTickHook (void)
 {
-	
+    // char *s0 = "500";
+    // char *s1 = "every";
+    // char *s2 = "to show: 你好";
+    // char s[8];
+    // if(d == 500)
+    // {
+    //     PC_DispStr(14, 4, s1, 
+    //         DISP_BGND_BLACK + DISP_FGND_WHITE);
+    //     PC_DispStr(18, 4, s0, 
+    //         DISP_BGND_BLACK + DISP_FGND_WHITE);
+    //     PC_DispStr(24, 4, s2, 
+    //         DISP_BGND_BLACK + DISP_FGND_WHITE);
+    //     sprintf(s, "%d", OSCtxSwCtr);
+    //     PC_DispStr(20, d1 + 5, s, 
+    //         DISP_BGND_BLACK + DISP_FGND_WHITE);
+    //     d = 0;
+    //     d1 += 1;
+    // }
+    // d += 1;
+
+    //4-2,信号量的实验
+    // if(InterCtr == 10000)
+    // {
+    //     InterKey = TRUE;
+    // }
+    // InterCtr++;
+
+    if(OSTCBPrioTbl[3]->OSTCBDly == 1)
+    {
+        sprintf(s,"%5d",tt);
+        PC_DispStr(d,l+4,s,DISP_BGND_BLACK+DISP_FGND_WHITE);
+        d += 6;
+    }
+    tt +=1 ;
 }
 #endif
